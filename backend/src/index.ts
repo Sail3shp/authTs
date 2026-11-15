@@ -4,6 +4,10 @@ import connectToDatabase from './config/db.js'
 import { APP_ORIGIN, NODE_ENV, PORT } from "./constants/env.js"
 import cors from 'cors'
 import cookieParser from "cookie-parser"
+import errorHandler from "./middleware/errorHandler.js"
+import catchErrors from "./utils/catchErrors.js"
+import { OK } from "./constants/http.js"
+import authRoutes from "./routes/auth.routes.js"
 
 const app = express()
 
@@ -16,13 +20,18 @@ app.use(cors({
 
 app.use(cookieParser())
 
-app.get('/health',(req,res) => {
-    return res.status(200).json({
+app.get('/health',
+    catchErrors(async(req,res) => {
+    return res.status(OK).json({
         status: 'healthy'
     })
-})
+}))
 
-app.listen(7777,async()=>{
+app.use('/auth',authRoutes)
+
+app.use(errorHandler)
+
+app.listen(PORT,async()=>{
     console.log(`server is running in  ${NODE_ENV} mode in port ${PORT}`)
     await connectToDatabase()
 })

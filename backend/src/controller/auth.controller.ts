@@ -2,8 +2,10 @@ import { z } from 'zod'
 import catchErrors from "../utils/catchErrors.js";
 import { createAccount, loginUser } from '../services/auth.service.js';
 import { CREATED, OK } from '../constants/http.js';
-import { setAuthCookies } from '../utils/cookies.js';
+import { clearAuthCookie, setAuthCookies } from '../utils/cookies.js';
 import { loginSchema, registerSchema } from './auth.schema.js';
+import { verifyToken } from '../utils/jwt.js';
+import SessionModel from '../model/session.model.js';
 
 
 
@@ -35,6 +37,20 @@ export const loginHandler = catchErrors(async (req, res) => {
 
     return setAuthCookies({res,refreshToken,accessToken}).status(OK).json({
         message:'Login Successful'
+    })
+
+})
+
+export const logoutHandler = catchErrors(async(req,res) => {
+    const accessToken = req.cookies.accessToken;
+    const {payload,error} = verifyToken(accessToken)
+
+    if(payload){
+        await SessionModel.findByIdAndDelete(payload.sessionId)
+    }
+
+    return clearAuthCookie(res).status(OK).json({
+        message:'Logout successful'
     })
 
 })
